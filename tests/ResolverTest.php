@@ -67,6 +67,16 @@ test('Autowiring with factory method and args', function () {
     expect($tc->test)->toBe('passed');
 });
 
+test('Autowiring with args array (non assoc)', function () {
+    $resolver = new Resolver($this->registry());
+    $tc = $resolver->autowire(TestClassRegistryArgs::class, [new TestClass('non assoc'), 'passed']);
+
+    expect($tc->tc instanceof TestClass)->toBe(true);
+    expect($tc->tc->value)->toBe('non assoc');
+    expect($tc->test)->toBe('passed');
+    expect($tc->app instanceof TestClassApp)->toBe(true);
+});
+
 test('Get constructor args', function () {
     $resolver = new Resolver($this->registry());
     $args = $resolver->resolveConstructorArgs(TestClassWithConstructor::class);
