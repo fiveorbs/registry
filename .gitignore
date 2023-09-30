@@ -1,0 +1,13 @@
+*.log
+.cache
+.env
+.php-cs-fixer.cache
+.php_cs.cache
+.phpactor.json
+.phpunit.result.cache
+__pycache__
+composer.lock
+/data
+/site
+/tmp
+/vendor
