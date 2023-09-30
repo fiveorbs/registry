@@ -26,25 +26,18 @@ class Registry implements PsrContainer
     protected array $tags = [];
 
     public function __construct(
-        protected readonly ?PsrContainer $container = null,
         public readonly bool $autowire = true,
         protected readonly string $tag = '',
         protected readonly ?Registry $parent = null,
     ) {
-        if ($container) {
-            $this->add(PsrContainer::class, $container);
-            $this->add($container::class, $container);
-        } else {
-            $this->add(PsrContainer::class, $this);
-        }
-
+        $this->add(PsrContainer::class, $this);
         $this->add(Registry::class, $this);
         $this->resolver = new Resolver($this);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->entries[$id]) || $this->container?->has($id);
+        return isset($this->entries[$id]);
     }
 
     /** @psalm-return list<string> */
@@ -72,10 +65,6 @@ class Registry implements PsrContainer
 
         if ($entry) {
             return $this->resolveEntry($entry);
-        }
-
-        if ($this->container && $this->container->has($id)) {
-            return $this->container->get($id);
         }
 
         // We are in a tag. Unregistered entries should always
