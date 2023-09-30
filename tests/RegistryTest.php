@@ -96,8 +96,8 @@ test('Factory method instantiation', function () {
     $instance = $registry->get(TestClassRegistryArgs::class);
 
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
-    expect($instance->config->app())->toBe('fromDefaults');
+    expect($instance->app instanceof TestClassApp)->toBe(true);
+    expect($instance->app->app())->toBe('fromDefaults');
     expect($instance->test)->toBe('fromDefaults');
 });
 
@@ -110,8 +110,8 @@ test('Factory method instantiation with args', function () {
     $instance = $registry->get(TestClassRegistryArgs::class);
 
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
-    expect($instance->config->app())->toBe('passed');
+    expect($instance->app instanceof TestClassApp)->toBe(true);
+    expect($instance->app->app())->toBe('passed');
     expect($instance->test)->toBe('passed');
 });
 
@@ -170,17 +170,17 @@ test('Resolve class with constructor', function () {
 test('Resolve closure class', function () {
     $registry = new Registry();
     $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', function (TestClassApp $config) {
+    $registry->add('class', function (TestClassApp $app) {
         return new TestClassRegistryArgs(
             new TestClass(),
             'chuck',
-            $config,
+            $app,
         );
     });
     $instance = $registry->get('class');
 
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
+    expect($instance->app instanceof TestClassApp)->toBe(true);
     expect($instance->test)->toBe('chuck');
 });
 
@@ -268,41 +268,41 @@ test('Resolve with named args array', function () {
 test('Resolve closure class with args', function () {
     $registry = new Registry();
     $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', function (TestClassApp $config, string $name, TestClass $tc) {
-        return new TestClassRegistryArgs($tc, $name, $config);
-    })->args(config: new TestClassApp('chuck'), tc: new TestClass(), name: 'chuck');
+    $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
+        return new TestClassRegistryArgs($tc, $name, $app);
+    })->args(app: new TestClassApp('chuck'), tc: new TestClass(), name: 'chuck');
     $instance = $registry->get('class');
 
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
+    expect($instance->app instanceof TestClassApp)->toBe(true);
     expect($instance->test)->toBe('chuck');
 });
 
 test('Resolve with args closure', function () {
     $registry = new Registry();
     $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', TestClassRegistryArgs::class)->args(function (TestClassApp $config) {
+    $registry->add('class', TestClassRegistryArgs::class)->args(function (TestClassApp $app) {
         return [
             'test' => 'chuck',
             'tc' => new TestClass(),
-            'config' => $config,
+            'app' => $app,
         ];
     });
     $instance = $registry->get('class');
 
     expect($instance instanceof TestClassRegistryArgs)->toBe(true);
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
+    expect($instance->app instanceof TestClassApp)->toBe(true);
     expect($instance->test)->toBe('chuck');
 });
 
 test('Resolve closure class with args closure', function () {
     $registry = new Registry();
-    $registry->add('class', function (TestClassApp $config, string $name, TestClass $tc) {
-        return new TestClassRegistryArgs($tc, $name, $config);
+    $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
+        return new TestClassRegistryArgs($tc, $name, $app);
     })->args(function () {
         return [
-            'config' => new TestClassApp('chuck'),
+            'app' => new TestClassApp('chuck'),
             'tc' => new TestClass(),
             'name' => 'chuck',
         ];
@@ -311,7 +311,7 @@ test('Resolve closure class with args closure', function () {
 
     expect($instance instanceof TestClassRegistryArgs)->toBe(true);
     expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->config instanceof TestClassApp)->toBe(true);
+    expect($instance->app instanceof TestClassApp)->toBe(true);
     expect($instance->test)->toBe('chuck');
 });
 
@@ -402,12 +402,12 @@ test('Parameter info class', function () {
 });
 
 test('Parameter info function', function () {
-    $rf = new ReflectionFunction(function (TestClassApp $config) {
-        $config->set('test', 'test');
+    $rf = new ReflectionFunction(function (TestClassApp $app) {
+        $app->debug();
     });
     $p = $rf->getParameters()[0];
     $resolver = new Resolver(new Registry());
-    $s = 'P\Tests\RegistryTest::{closure}(..., Conia\Registry\Tests\Fixtures\TestClassApp $config, ...)';
+    $s = 'P\Tests\RegistryTest::{closure}(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
 
     expect($resolver->getParamInfo($p))->toBe($s);
 });

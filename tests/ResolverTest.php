@@ -52,8 +52,8 @@ test('Autowiring with simple factory method', function () {
     $tc = $resolver->autowire(TestClassRegistryArgs::class, [], 'fromDefaults');
 
     expect($tc->tc instanceof TestClass)->toBe(true);
-    expect($tc->config instanceof TestClassApp)->toBe(true);
-    expect($tc->config->app())->toBe('fromDefaults');
+    expect($tc->app instanceof TestClassApp)->toBe(true);
+    expect($tc->app->app())->toBe('fromDefaults');
     expect($tc->test)->toBe('fromDefaults');
 });
 
@@ -62,8 +62,8 @@ test('Autowiring with factory method and args', function () {
     $tc = $resolver->autowire(TestClassRegistryArgs::class, ['test' => 'passed', 'app' => 'passed'], 'fromArgs');
 
     expect($tc->tc instanceof TestClass)->toBe(true);
-    expect($tc->config instanceof TestClassApp)->toBe(true);
-    expect($tc->config->app())->toBe('passed');
+    expect($tc->app instanceof TestClassApp)->toBe(true);
+    expect($tc->app->app())->toBe('passed');
     expect($tc->test)->toBe('passed');
 });
 

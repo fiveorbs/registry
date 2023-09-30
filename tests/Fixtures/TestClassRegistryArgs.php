@@ -9,9 +9,8 @@ class TestClassRegistryArgs
     public function __construct(
         public readonly TestClass $tc,
         public readonly string $test,
-        public readonly ?TestClassApp $config = null,
-    ) {
-    }
+        public readonly ?TestClassApp $app = null,
+    ) {}
 
     public static function fromDefaults(): static
     {
