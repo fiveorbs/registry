@@ -1,0 +1,41 @@
+{
+    "name": "conia/registry",
+    "description": "A PSR-11 compatible dependency injection container",
+    "keywords": [
+        "di",
+        "dependency injection",
+        "container",
+        "ioc",
+        "psr-11",
+        "psr11"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": ">=8.2",
+        "psr/container": "^2.0"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1",
+        "pestphp/pest": "^2",
+        "vimeo/psalm": "^5.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Conia\\Registry\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Conia\\Registry\\Tests\\": "tests"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "pestphp/pest-plugin": true
+        }
+    }
+}
