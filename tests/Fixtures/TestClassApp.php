@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Conia\Registry\Tests\Fixtures;
 
-class TestApp
+class TestClassApp
 {
     /**
      * @param array<never, never>|array<string, mixed> -- Stores additional user defined settings
