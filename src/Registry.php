@@ -6,8 +6,8 @@ namespace Conia\Registry;
 
 use Closure;
 use Conia\Registry\Entry;
-use Conia\Registry\Resolver;
 use Conia\Registry\Exception\NotFoundException;
+use Conia\Registry\Resolver;
 use Psr\Container\ContainerInterface as PsrContainer;
 
 /**

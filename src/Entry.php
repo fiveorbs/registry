@@ -16,6 +16,7 @@ class Entry
 {
     /** @psalm-var null|Args */
     protected array|Closure|null $args = null;
+
     protected ?string $constructor = null;
     protected bool $asIs = false;
     protected bool $reify;
