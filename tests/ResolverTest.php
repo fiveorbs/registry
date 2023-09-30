@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Conia\Registry\Tests;
+
 use Conia\Registry\Call;
 use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Inject;
@@ -18,160 +20,191 @@ use Conia\Registry\Tests\Fixtures\TestClassResolverDefault;
 use Conia\Registry\Tests\Fixtures\TestClassWithConstructor;
 use Conia\Registry\Tests\TestCase;
 
-uses(TestCase::class);
+/**
+ * @internal
+ *
+ * @covers \Conia\Registry\Call
+ * @covers \Conia\Registry\Entry
+ * @covers \Conia\Registry\Inject
+ * @covers \Conia\Registry\Registry
+ * @covers \Conia\Registry\Resolver
+ */
+final class ResolverTest extends TestCase
+{
+    public function testSimpleAutowiring(): void
+    {
+        $resolver = new Resolver($this->registry());
 
-test('Simple autowiring', function () {
-    $resolver = new Resolver($this->registry());
+        $this->assertInstanceOf(TestClassWithConstructor::class, $resolver->autowire(TestClassWithConstructor::class));
+    }
 
-    expect($resolver->autowire(TestClassWithConstructor::class))
-        ->toBeInstanceOf(TestClassWithConstructor::class);
-});
+    public function testAutowiringWithPartialArgs(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClassResolver::class, ['name' => 'chuck', 'number' => 73]);
 
-test('Autowiring with partial args', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClassResolver::class, ['name' => 'chuck', 'number' => 73]);
+        $this->assertInstanceOf(TestClassResolver::class, $tc);
+        $this->assertEquals('chuck', $tc->name);
+        $this->assertEquals(73, $tc->number);
+        $this->assertInstanceOf(TestClass::class, $tc->tc);
+    }
 
-    expect($tc)->toBeInstanceOf(TestClassResolver::class);
-    expect($tc->name)->toBe('chuck');
-    expect($tc->number)->toBe(73);
-    expect($tc->tc)->toBeInstanceOf(TestClass::class);
-});
+    public function testAutowiringWithPartialArgsAndDefaultValues(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClassResolverDefault::class, ['number' => 73]);
 
-test('Autowiring with partial args and default values', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClassResolverDefault::class, ['number' => 73]);
+        $this->assertInstanceOf(TestClassResolverDefault::class, $tc);
+        $this->assertEquals('default', $tc->name);
+        $this->assertEquals(73, $tc->number);
+        $this->assertInstanceOf(TestClass::class, $tc->tc);
+    }
 
-    expect($tc)->toBeInstanceOf(TestClassResolverDefault::class);
-    expect($tc->name)->toBe('default');
-    expect($tc->number)->toBe(73);
-    expect($tc->tc)->toBeInstanceOf(TestClass::class);
-});
+    public function testAutowiringWithSimpleFactoryMethod(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClassRegistryArgs::class, [], 'fromDefaults');
 
-test('Autowiring with simple factory method', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClassRegistryArgs::class, [], 'fromDefaults');
+        $this->assertEquals(true, $tc->tc instanceof TestClass);
+        $this->assertEquals(true, $tc->app instanceof TestClassApp);
+        $this->assertEquals('fromDefaults', $tc->app->app());
+        $this->assertEquals('fromDefaults', $tc->test);
+    }
 
-    expect($tc->tc instanceof TestClass)->toBe(true);
-    expect($tc->app instanceof TestClassApp)->toBe(true);
-    expect($tc->app->app())->toBe('fromDefaults');
-    expect($tc->test)->toBe('fromDefaults');
-});
+    public function testAutowiringWithFactoryMethodAndArgs(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClassRegistryArgs::class, ['test' => 'passed', 'app' => 'passed'], 'fromArgs');
 
-test('Autowiring with factory method and args', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClassRegistryArgs::class, ['test' => 'passed', 'app' => 'passed'], 'fromArgs');
+        $this->assertEquals(true, $tc->tc instanceof TestClass);
+        $this->assertEquals(true, $tc->app instanceof TestClassApp);
+        $this->assertEquals('passed', $tc->app->app());
+        $this->assertEquals('passed', $tc->test);
+    }
 
-    expect($tc->tc instanceof TestClass)->toBe(true);
-    expect($tc->app instanceof TestClassApp)->toBe(true);
-    expect($tc->app->app())->toBe('passed');
-    expect($tc->test)->toBe('passed');
-});
+    public function testAutowiringWithNonAssocArgsArray(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClassRegistryArgs::class, [new TestClass('non assoc'), 'passed']);
 
-test('Autowiring with args array (non assoc)', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClassRegistryArgs::class, [new TestClass('non assoc'), 'passed']);
+        $this->assertEquals(true, $tc->tc instanceof TestClass);
+        $this->assertEquals('non assoc', $tc->tc->value);
+        $this->assertEquals('passed', $tc->test);
+        $this->assertEquals(true, $tc->app instanceof TestClassApp);
+    }
 
-    expect($tc->tc instanceof TestClass)->toBe(true);
-    expect($tc->tc->value)->toBe('non assoc');
-    expect($tc->test)->toBe('passed');
-    expect($tc->app instanceof TestClassApp)->toBe(true);
-});
+    public function testGetConstructorArgs(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $args = $resolver->resolveConstructorArgs(TestClassWithConstructor::class);
 
-test('Get constructor args', function () {
-    $resolver = new Resolver($this->registry());
-    $args = $resolver->resolveConstructorArgs(TestClassWithConstructor::class);
+        $this->assertInstanceOf(TestClass::class, $args[0]);
+    }
 
-    expect($args[0])->toBeInstanceOf(TestClass::class);
-});
+    public function testGetClosureArgs(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $args = $resolver->resolveCallableArgs(function (Testclass $tc, int $number = 13) {});
 
-test('Get closure args', function () {
-    $resolver = new Resolver($this->registry());
-    $args = $resolver->resolveCallableArgs(function (Testclass $tc, int $number = 13) {});
+        $this->assertInstanceOf(TestClass::class, $args[0]);
+        $this->assertEquals(13, $args[1]);
+    }
 
-    expect($args[0])->toBeInstanceOf(TestClass::class);
-    expect($args[1])->toBe(13);
-});
+    public function testGetCallableObjectArgs(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $tc = $resolver->autowire(TestClass::class);
+        $args = $resolver->resolveCallableArgs($tc);
 
-test('Get callable object args', function () {
-    $resolver = new Resolver($this->registry());
-    $tc = $resolver->autowire(TestClass::class);
-    $args = $resolver->resolveCallableArgs($tc);
+        $this->assertEquals('default', $args[0]);
+        $this->assertEquals(13, $args[1]);
+    }
 
-    expect($args[0])->toBe('default');
-    expect($args[1])->toBe(13);
-});
+    public function testCallAttributes(): void
+    {
+        $resolver = new Resolver($this->registry());
+        $attr = $resolver->autowire(TestClassCall::class);
 
-test('Call attributes', function () {
-    $resolver = new Resolver($this->registry());
-    $attr = $resolver->autowire(TestClassCall::class);
+        $this->assertInstanceOf(Registry::class, $attr->registry);
+        $this->assertInstanceOf(TestClassApp::class, $attr->app);
+        $this->assertInstanceOf(TestClassRequest::class, $attr->request);
+        $this->assertEquals('arg1', $attr->arg1);
+        $this->assertEquals('arg2', $attr->arg2);
+    }
 
-    expect($attr->registry)->toBeInstanceOf(Registry::class);
-    expect($attr->app)->toBeInstanceOf(TestClassApp::class);
-    expect($attr->request)->toBeInstanceOf(TestClassRequest::class);
-    expect($attr->arg1)->toBe('arg1');
-    expect($attr->arg2)->toBe('arg2');
-});
+    public function testCallAttributeDoesNotAllowUnnamedArgs(): void
+    {
+        $this->throws(ContainerException::class, 'Arguments for Call');
 
-test('Call attribute does not allow unnamed args', function () {
-    new Call('method', 'arg');
-})->throws(RuntimeException::class, 'Arguments for Call');
+        new Call('method', 'arg');
+    }
 
-test('Fail when autowire is turned off', function () {
-    $resolver = new Resolver($this->registry(autowire: false));
-    $resolver->autowire(Response::class);
-})->throws(ContainerException::class, 'Autowiring is turned off');
+    public function testFailWhenAutowireIsTurnedOff(): void
+    {
+        $this->throws(ContainerException::class, 'Autowiring is turned off');
 
-test('Inject closure with attribute', function () {
-    $registry = $this->registry();
-    $resolver = new Resolver($registry);
-    $registry->add('injected', new TestClassApp('injected'));
+        $resolver = new Resolver($this->registry(autowire: false));
+        $resolver->autowire(Response::class);
+    }
 
-    $func = #[Inject(name: 'Chuck', app: 'injected')] function (
-        Registry $r,
-        TestClassApp $app,
-        string $name
-    ): array {
-        return [$app->app, $name, $r];
-    };
+    public function testInjectClosureWithAttribute(): void
+    {
+        $registry = $this->registry();
+        $resolver = new Resolver($registry);
+        $registry->add('injected', new TestClassApp('injected'));
 
-    $result = $func(...$resolver->resolveCallableArgs($func));
+        $func = #[Inject(name: 'Chuck', app: 'injected')] function (
+            Registry $r,
+            TestClassApp $app,
+            string $name
+        ): array {
+            return [$app->app, $name, $r];
+        };
 
-    expect($result[0])->toBe('injected');
-    expect($result[1])->toBe('Chuck');
-    expect($result[2])->toBeInstanceOf(Registry::class);
-});
+        $result = $func(...$resolver->resolveCallableArgs($func));
 
-test('Inject constructor with attribute', function () {
-    $registry = $this->registry();
-    $resolver = new Resolver($registry);
-    $registry->add('injected', new TestClassApp('injected'));
+        $this->assertEquals('injected', $result[0]);
+        $this->assertEquals('Chuck', $result[1]);
+        $this->assertInstanceOf(Registry::class, $result[2]);
+    }
 
-    $args = $resolver->resolveConstructorArgs(TestClassInject::class);
-    $obj = new TestClassInject(...$args);
+    public function testInjectConstructorWithAttribute(): void
+    {
+        $registry = $this->registry();
+        $resolver = new Resolver($registry);
+        $registry->add('injected', new TestClassApp('injected'));
 
-    expect($obj->app->app())->toBe('injected');
-    expect($obj->arg1)->toBe('arg1');
-    expect($obj->arg2)->toBe(13);
-    expect($obj->registry)->toBeInstanceOf(Registry::class);
-    expect((string)$obj->tc)->toBe('Stringable extended');
-});
+        $args = $resolver->resolveConstructorArgs(TestClassInject::class);
+        $obj = new TestClassInject(...$args);
 
-test('Inject attribute does not allow unnamed args', function () {
-    new Inject('arg');
-})->throws(RuntimeException::class, 'Arguments for Inject');
+        $this->assertEquals('injected', $obj->app->app());
+        $this->assertEquals('arg1', $obj->arg1);
+        $this->assertEquals(13, $obj->arg2);
+        $this->assertInstanceOf(Registry::class, $obj->registry);
+        $this->assertEquals('Stringable extended', (string)$obj->tc);
+    }
 
-test('Inject and Call combined', function () {
-    $registry = $this->registry();
-    $registry->add('injected', new TestClassApp('injected'));
-    $resolver = new Resolver($registry);
+    public function testInjectAttributeDoesNotAllowUnnamedArgs(): void
+    {
+        $this->throws(ContainerException::class, 'Arguments for Inject');
 
-    $obj = $resolver->autowire(TestClassInject::class);
+        new Inject('arg');
+    }
 
-    expect($obj->app->app())->toBe('injected');
-    expect($obj->arg1)->toBe('arg1');
-    expect($obj->arg2)->toBe(13);
-    expect($obj->registry)->toBeInstanceOf(Registry::class);
-    expect((string)$obj->tc)->toBe('Stringable extended');
-    expect($obj->calledArg1)->toBe('calledArg1');
-    expect($obj->calledArg2)->toBe(73);
-});
+    public function testInjectAndCallCombined(): void
+    {
+        $registry = $this->registry();
+        $registry->add('injected', new TestClassApp('injected'));
+        $resolver = new Resolver($registry);
+
+        $obj = $resolver->autowire(TestClassInject::class);
+
+        $this->assertEquals('injected', $obj->app->app());
+        $this->assertEquals('arg1', $obj->arg1);
+        $this->assertEquals(13, $obj->arg2);
+        $this->assertInstanceOf(Registry::class, $obj->registry);
+        $this->assertEquals('Stringable extended', (string)$obj->tc);
+        $this->assertEquals('calledArg1', $obj->calledArg1);
+        $this->assertEquals(73, $obj->calledArg2);
+    }
+}

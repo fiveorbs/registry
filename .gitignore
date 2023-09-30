@@ -4,9 +4,11 @@
 .php-cs-fixer.cache
 .php_cs.cache
 .phpactor.json
+.phpunit.cache
 .phpunit.result.cache
 __pycache__
 composer.lock
+/coverage
 /data
 /site
 /tmp

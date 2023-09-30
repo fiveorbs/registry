@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+namespace Conia\Registry\Tests;
+
+use Closure;
 use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Exception\NotFoundException;
 use Conia\Registry\Registry;
@@ -15,405 +18,474 @@ use Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor;
 use Conia\Registry\Tests\Fixtures\TestClassUntypedConstructor;
 use Conia\Registry\Tests\Fixtures\TestClassWithConstructor;
 use Conia\Registry\Tests\TestCase;
+use ReflectionClass;
+use ReflectionFunction;
+use stdClass;
 
-uses(TestCase::class);
+/**
+ * @internal
+ *
+ * @covers \Conia\Registry\Call
+ * @covers \Conia\Registry\Entry
+ * @covers \Conia\Registry\Inject
+ * @covers \Conia\Registry\Registry
+ * @covers \Conia\Registry\Resolver
+ */
+final class RegistryTest extends TestCase
+{
+    public function testAddKeyWithoutValue(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClassApp::class);
 
-test('Add key without value', function () {
-    $registry = new Registry();
-    $registry->add(TestClassApp::class);
+        $this->assertEquals(TestClassApp::class, $registry->entry(TestClassApp::class)->definition());
+    }
 
-    expect($registry->entry(TestClassApp::class)->definition())->toBe(TestClassApp::class);
-});
+    public function testEntryInstanceAndValue(): void
+    {
+        $registry = new Registry();
+        $registry->add(stdClass::class);
 
-test('Entry instance and value', function () {
-    $registry = new Registry();
-    $registry->add(stdClass::class);
+        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->definition());
+        $this->assertEquals(null, $registry->entry(stdClass::class)->instance());
+        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->get());
 
-    expect($registry->entry(stdClass::class)->definition())->toBe(stdClass::class);
-    expect($registry->entry(stdClass::class)->instance())->toBe(null);
-    expect($registry->entry(stdClass::class)->get())->toBe(stdClass::class);
+        $obj = $registry->get(stdClass::class);
 
-    $obj = $registry->get(stdClass::class);
+        $this->assertEquals(true, $obj instanceof stdClass);
+        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->definition());
+        $this->assertEquals($obj, $registry->entry(stdClass::class)->instance());
+        $this->assertEquals($obj, $registry->entry(stdClass::class)->get());
+    }
 
-    expect($obj instanceof stdClass)->toBe(true);
-    expect($registry->entry(stdClass::class)->definition())->toBe(stdClass::class);
-    expect($registry->entry(stdClass::class)->instance())->toBe($obj);
-    expect($registry->entry(stdClass::class)->get())->toBe($obj);
-});
+    public function testCheckIfRegistered(): void
+    {
+        $registry = new Registry();
+        $registry->add(Registry::class, $registry);
 
-test('Check if registered', function () {
-    $registry = new Registry();
-    $registry->add(Registry::class, $registry);
+        $this->assertEquals(true, $registry->has(Registry::class));
+        $this->assertEquals(false, $registry->has('registry'));
+    }
 
-    expect($registry->has(Registry::class))->toBe(true);
-    expect($registry->has('registry'))->toBe(false);
-});
+    public function testInstantiate(): void
+    {
+        $registry = new Registry();
+        $registry->add('registry', Registry::class);
+        $registry->add('test', TestClass::class);
+        $reg = $registry->new('registry');
+        $req = $registry->new('test');
 
-test('Instantiate', function () {
-    $registry = new Registry();
-    $registry->add('registry', Registry::class);
-    $registry->add('test', TestClass::class);
-    $reg = $registry->new('registry');
-    $req = $registry->new('test');
+        $this->assertEquals(true, $reg instanceof Registry);
+        $this->assertEquals(true, $req instanceof TestClass);
+    }
 
-    expect($reg instanceof Registry)->toBe(true);
-    expect($req instanceof TestClass)->toBe(true);
-});
+    public function testInstantiateWithCall(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClass::class)->call('init', value: 'testvalue');
+        $tc = $registry->get(TestClass::class);
 
-test('Instantiate with call', function () {
-    $registry = new Registry();
-    $registry->add(TestClass::class)->call('init', value: 'testvalue');
-    $tc = $registry->get(TestClass::class);
+        $this->assertEquals(true, $tc instanceof TestClass);
+        $this->assertEquals('testvalue', $tc->value);
+    }
 
-    expect($tc instanceof TestClass)->toBe(true);
-    expect($tc->value)->toBe('testvalue');
-});
-
-test('Chained instantiation', function () {
-    $registry = new Registry();
-    $registry->add(
-        Psr\Container\ContainerExceptionInterface::class,
-        Psr\Container\NotFoundExceptionInterface::class
-    );
-    $registry->add(
-        Psr\Container\NotFoundExceptionInterface::class,
-        NotFoundException::class
-    );
-    $exception = $registry->new(
-        Psr\Container\ContainerExceptionInterface::class,
-        'The message',
-        13
-    );
-
-    expect($exception instanceof NotFoundException)->toBe(true);
-    expect($exception->getMessage())->toBe('The message');
-    expect($exception->getCode())->toBe(13);
-});
-
-test('Factory method instantiation', function () {
-    $registry = new Registry();
-    $registry->add(TestClassRegistryArgs::class)->constructor('fromDefaults');
-    $instance = $registry->get(TestClassRegistryArgs::class);
-
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->app->app())->toBe('fromDefaults');
-    expect($instance->test)->toBe('fromDefaults');
-});
-
-test('Factory method instantiation with args', function () {
-    $registry = new Registry();
-    $registry
-        ->add(TestClassRegistryArgs::class)
-        ->constructor('fromArgs')
-        ->args(test: 'passed', app: 'passed');
-    $instance = $registry->get(TestClassRegistryArgs::class);
-
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->app->app())->toBe('passed');
-    expect($instance->test)->toBe('passed');
-});
-
-test('Autowired instantiation', function () {
-    $registry = new Registry();
-
-    expect($registry->new(NotFoundException::class) instanceof NotFoundException)->toBe(true);
-});
-
-test('Autowired instantiation fails', function () {
-    $registry = new Registry();
-
-    expect($registry->new(NoValidClass::class) instanceof NotFoundException)->toBe(true);
-})->throws(NotFoundException::class, 'Cannot instantiate NoValidClass');
-
-test('Resolve instance', function () {
-    $registry = new Registry();
-    $object = new stdClass();
-    $registry->add('object', $object);
-
-    expect($registry->get('object'))->toBe($object);
-});
-
-test('Resolve simple class', function () {
-    $registry = new Registry();
-    $registry->add('class', stdClass::class);
-
-    expect($registry->get('class') instanceof stdClass)->toBe(true);
-});
-
-test('Resolve chained entry', function () {
-    $registry = new Registry();
-    $registry->add(
-        Psr\Container\ContainerExceptionInterface::class,
-        Psr\Container\NotFoundExceptionInterface::class
-    );
-    $registry->add(
-        Psr\Container\NotFoundExceptionInterface::class,
-        NotFoundException::class
-    );
-
-    expect($registry->get(
-        Psr\Container\ContainerExceptionInterface::class
-    ) instanceof NotFoundException)->toBe(true);
-});
-
-test('Resolve class with constructor', function () {
-    $registry = new Registry();
-
-    $object = $registry->get(TestClassWithConstructor::class);
-
-    expect($object::class)->toBe(TestClassWithConstructor::class);
-    expect($object->tc::class)->toBe(TestClass::class);
-});
-
-test('Resolve closure class', function () {
-    $registry = new Registry();
-    $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', function (TestClassApp $app) {
-        return new TestClassRegistryArgs(
-            new TestClass(),
-            'chuck',
-            $app,
+    public function testChainedInstantiation(): void
+    {
+        $registry = new Registry();
+        $registry->add(
+            \Psr\Container\ContainerExceptionInterface::class,
+            \Psr\Container\NotFoundExceptionInterface::class
         );
-    });
-    $instance = $registry->get('class');
+        $registry->add(
+            \Psr\Container\NotFoundExceptionInterface::class,
+            NotFoundException::class
+        );
+        $exception = $registry->new(
+            \Psr\Container\ContainerExceptionInterface::class,
+            'The message',
+            13
+        );
 
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $this->assertEquals(true, $exception instanceof NotFoundException);
+        $this->assertEquals('The message', $exception->getMessage());
+        $this->assertEquals(13, $exception->getCode());
+    }
 
-test('Reject class with untyped constructor', function () {
-    $registry = new Registry();
+    public function testFactoryMethodInstantiation(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClassRegistryArgs::class)->constructor('fromDefaults');
+        $instance = $registry->get(TestClassRegistryArgs::class);
 
-    $registry->get(TestClassUntypedConstructor::class);
-})->throws(ContainerException::class, 'typed constructor parameters');
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('fromDefaults', $instance->app->app());
+        $this->assertEquals('fromDefaults', $instance->test);
+    }
 
-test('Reject class with unsupported constructor union types', function () {
-    $registry = new Registry();
+    public function testFactoryMethodInstantiationWithArgs(): void
+    {
+        $registry = new Registry();
+        $registry
+            ->add(TestClassRegistryArgs::class)
+            ->constructor('fromArgs')
+            ->args(test: 'passed', app: 'passed');
+        $instance = $registry->get(TestClassRegistryArgs::class);
 
-    $registry->get(TestClassUnionTypeConstructor::class);
-})->throws(ContainerException::class, 'union or intersection');
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('passed', $instance->app->app());
+        $this->assertEquals('passed', $instance->test);
+    }
 
-test('Reject class with unsupported constructor intersection types', function () {
-    $registry = new Registry();
+    public function testAutowiredInstantiation(): void
+    {
+        $registry = new Registry();
 
-    $registry->get(TestClassIntersectionTypeConstructor::class);
-})->throws(ContainerException::class, 'union or intersection');
+        $this->assertEquals(true, $registry->new(NotFoundException::class) instanceof NotFoundException);
+    }
 
-test('Reject unresolvable class', function () {
-    $registry = new Registry();
+    public function testAutowiredInstantiationFails(): void
+    {
+        $this->throws(NotFoundException::class, 'Cannot instantiate Conia\Registry\Tests\NoValidClass');
 
-    $registry->get(GdImage::class);
-})->throws(ContainerException::class, 'unresolvable');
+        $registry = new Registry();
 
-test('Getting non existent class fails', function () {
-    $registry = new Registry();
+        $this->assertEquals(true, $registry->new(NoValidClass::class) instanceof NotFoundException);
+    }
 
-    $registry->get('NonExistent');
-})->throws(NotFoundException::class, 'NonExistent');
+    public function testResolveInstance(): void
+    {
+        $registry = new Registry();
+        $object = new stdClass();
+        $registry->add('object', $object);
 
-test('Getting non resolvable entry fails', function () {
-    $registry = new Registry();
-    $registry->add('unresolvable', InvalidClass::class);
+        $this->assertEquals($object, $registry->get('object'));
+    }
 
-    $registry->get('unresolvable');
-})->throws(NotFoundException::class, 'Unresolvable id: InvalidClass');
+    public function testResolveSimpleClass(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', stdClass::class);
 
-test('Rejecting class with non resolvable params', function () {
-    $registry = new Registry();
-    $registry->add('unresolvable', TestClassRegistryArgs::class);
+        $this->assertEquals(true, $registry->get('class') instanceof stdClass);
+    }
 
-    $registry->get('unresolvable');
-})->throws(ContainerException::class, 'Unresolvable id: string');
+    public function testResolveChainedEntry(): void
+    {
+        $registry = new Registry();
+        $registry->add(
+            Psr\Container\ContainerExceptionInterface::class,
+            Psr\Container\NotFoundExceptionInterface::class
+        );
+        $registry->add(
+            Psr\Container\NotFoundExceptionInterface::class,
+            NotFoundException::class
+        );
 
-test('Resolve with args array', function () {
-    $registry = new Registry();
-    $registry->add('class', TestClassRegistryArgs::class)->args([
-        'test' => 'chuck',
-        'tc' => new TestClass(),
-    ]);
-    $instance = $registry->get('class');
+        $this->assertEquals(true, $registry->get(Psr\Container\ContainerExceptionInterface::class) instanceof NotFoundException);
+    }
 
-    expect($instance instanceof TestClassRegistryArgs)->toBe(true);
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+    public function testResolveClassWithConstructor(): void
+    {
+        $registry = new Registry();
 
-test('Resolve with single named arg array', function () {
-    $registry = new Registry();
-    $registry->add('class', TestClassRegistrySingleArg::class)->args(
-        test: 'chuck',
-    );
-    $instance = $registry->get('class');
+        $object = $registry->get(TestClassWithConstructor::class);
 
-    expect($instance instanceof TestClassRegistrySingleArg)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $this->assertEquals($object::class, TestClassWithConstructor::class);
+        $this->assertEquals(TestClass::class, $object->tc::class);
+    }
 
-test('Resolve with named args array', function () {
-    $registry = new Registry();
-    $registry->add('class', TestClassRegistryArgs::class)->args(
-        test: 'chuck',
-        tc: new TestClass(),
-    );
-    $instance = $registry->get('class');
+    public function testResolveClosureClass(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClassApp::class, new TestClassApp('chuck'));
+        $registry->add('class', function (TestClassApp $app) {
+            return new TestClassRegistryArgs(new TestClass(), 'chuck', $app);
+        });
+        $instance = $registry->get('class');
 
-    expect($instance instanceof TestClassRegistryArgs)->toBe(true);
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Resolve closure class with args', function () {
-    $registry = new Registry();
-    $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
-        return new TestClassRegistryArgs($tc, $name, $app);
-    })->args(app: new TestClassApp('chuck'), tc: new TestClass(), name: 'chuck');
-    $instance = $registry->get('class');
+    public function testRejectClassWithUntypedConstructor(): void
+    {
+        $this->throws(ContainerException::class, 'typed constructor parameters');
 
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $registry = new Registry();
 
-test('Resolve with args closure', function () {
-    $registry = new Registry();
-    $registry->add(TestClassApp::class, new TestClassApp('chuck'));
-    $registry->add('class', TestClassRegistryArgs::class)->args(function (TestClassApp $app) {
-        return [
+        $registry->get(TestClassUntypedConstructor::class);
+    }
+
+    public function testRejectClassWithUnsupportedConstructorUnionTypes(): void
+    {
+        $this->throws(ContainerException::class, 'union or intersection');
+
+        $registry = new Registry();
+
+        $registry->get(TestClassUnionTypeConstructor::class);
+    }
+
+    public function testRejectClassWithUnsupportedConstructorIntersectionTypes(): void
+    {
+        $this->throws(ContainerException::class, 'union or intersection');
+
+        $registry = new Registry();
+
+        $registry->get(TestClassIntersectionTypeConstructor::class);
+    }
+
+    public function testRejectUnresolvableClass(): void
+    {
+        $this->throws(ContainerException::class, 'Unresolvable');
+
+        $registry = new Registry();
+
+        $registry->get(GdImage::class);
+    }
+
+    public function testGettingNonExistentClassFails(): void
+    {
+        $this->throws(NotFoundException::class, 'NonExistent');
+
+        $registry = new Registry();
+
+        $registry->get('NonExistent');
+    }
+
+    public function testGettingNonResolvableEntryFails(): void
+    {
+        $this->throws(NotFoundException::class, 'Unresolvable id: Conia\Registry\Tests\InvalidClass');
+
+        $registry = new Registry();
+        $registry->add('unresolvable', InvalidClass::class);
+
+        $registry->get('unresolvable');
+    }
+
+    public function testRejectingClassWithNonResolvableParams(): void
+    {
+        $this->throws(ContainerException::class, 'Unresolvable id: string');
+
+        $registry = new Registry();
+        $registry->add('unresolvable', TestClassRegistryArgs::class);
+
+        $registry->get('unresolvable');
+    }
+
+    public function testResolveWithArgsArray(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', TestClassRegistryArgs::class)->args([
             'test' => 'chuck',
             'tc' => new TestClass(),
-            'app' => $app,
-        ];
-    });
-    $instance = $registry->get('class');
+        ]);
+        $instance = $registry->get('class');
 
-    expect($instance instanceof TestClassRegistryArgs)->toBe(true);
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Resolve closure class with args closure', function () {
-    $registry = new Registry();
-    $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
-        return new TestClassRegistryArgs($tc, $name, $app);
-    })->args(function () {
-        return [
-            'app' => new TestClassApp('chuck'),
-            'tc' => new TestClass(),
-            'name' => 'chuck',
-        ];
-    });
-    $instance = $registry->get('class');
+    public function testResolveWithSingleNamedArgArray(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', TestClassRegistrySingleArg::class)->args(
+            test: 'chuck',
+        );
+        $instance = $registry->get('class');
 
-    expect($instance instanceof TestClassRegistryArgs)->toBe(true);
-    expect($instance->tc instanceof TestClass)->toBe(true);
-    expect($instance->app instanceof TestClassApp)->toBe(true);
-    expect($instance->test)->toBe('chuck');
-});
+        $this->assertEquals(true, $instance instanceof TestClassRegistrySingleArg);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Reject multiple unnamed args', function () {
-    $registry = new Registry();
-    $registry->add('class', function () {
-        return new stdClass();
-    })->args('chuck', 13);
-})->throws(ContainerException::class, 'Registry entry arguments');
+    public function testResolveWithNamedArgsArray(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', TestClassRegistryArgs::class)->args(
+            test: 'chuck',
+            tc: new TestClass(),
+        );
+        $instance = $registry->get('class');
 
-test('Reject single unnamed arg with wrong type', function () {
-    $registry = new Registry();
-    $registry->add('class', function () {
-        return new stdClass();
-    })->args('chuck');
-})->throws(ContainerException::class, 'Registry entry arguments');
+        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Is reified', function () {
-    $registry = new Registry();
-    $registry->add('class', stdClass::class);
-    $obj1 = $registry->get('class');
-    $obj2 = $registry->get('class');
+    public function testResolveClosureClassWithArgs(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClassApp::class, new TestClassApp('chuck'));
+        $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
+            return new TestClassRegistryArgs($tc, $name, $app);
+        })->args(app: new TestClassApp('chuck'), tc: new TestClass(), name: 'chuck');
+        $instance = $registry->get('class');
 
-    expect($obj1 === $obj2)->toBe(true);
-});
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('As is', function () {
-    $registry = new Registry();
-    $registry->add('closure1', fn () => 'called');
-    $registry->add('closure2', fn () => 'notcalled')->asIs();
-    $value1 = $registry->get('closure1');
-    $value2 = $registry->get('closure2');
+    public function testResolveWithArgsClosure(): void
+    {
+        $registry = new Registry();
+        $registry->add(TestClassApp::class, new TestClassApp('chuck'));
+        $registry->add('class', TestClassRegistryArgs::class)->args(function (TestClassApp $app) {
+            return [
+                'test' => 'chuck',
+                'tc' => new TestClass(),
+                'app' => $app,
+            ];
+        });
+        $instance = $registry->get('class');
 
-    expect($value1)->toBe('called');
-    expect($value2 instanceof Closure)->toBe(true);
-});
+        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Is not reified', function () {
-    $registry = new Registry();
-    $registry->add('class', stdClass::class)->reify(false);
-    $obj1 = $registry->get('class');
-    $obj2 = $registry->get('class');
+    public function testResolveClosureClassWithArgsClosure(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', function (TestClassApp $app, string $name, TestClass $tc) {
+            return new TestClassRegistryArgs($tc, $name, $app);
+        })->args(function () {
+            return [
+                'app' => new TestClassApp('chuck'),
+                'tc' => new TestClass(),
+                'name' => 'chuck',
+            ];
+        });
+        $instance = $registry->get('class');
 
-    expect($obj1 === $obj2)->toBe(false);
-});
+        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertEquals(true, $instance->tc instanceof TestClass);
+        $this->assertEquals(true, $instance->app instanceof TestClassApp);
+        $this->assertEquals('chuck', $instance->test);
+    }
 
-test('Fetch entries list', function () {
-    $registry = new Registry();
-    $registry->add('class', stdClass::class)->reify(false);
+    public function testRejectMultipleUnnamedArgs(): void
+    {
+        $this->throws(ContainerException::class, 'Registry entry arguments');
 
-    expect($registry->entries())->toBe(['class']);
-    expect($registry->entries(includeRegistry: true))->toBe(
-        ['Psr\Container\ContainerInterface', 'Conia\Registry\Registry', 'class']
-    );
-});
+        $registry = new Registry();
+        $registry->add('class', function () {
+            return new stdClass();
+        })->args('chuck', 13);
+    }
 
-test('Add and receive tagged entries', function () {
-    $registry = new Registry();
-    $registry->tag('tag')->add('class', stdClass::class);
-    $obj = $registry->tag('tag')->get('class');
-    $entry = $registry->tag('tag')->entry('class');
+    public function testRejectSingleUnnamedArgWithWrongType(): void
+    {
+        $this->throws(ContainerException::class, 'Registry entry arguments');
 
-    expect($obj instanceof stdClass)->toBe(true);
-    expect($entry->definition())->toBe(stdClass::class);
-    expect($obj === $entry->instance())->toBe(true);
-    expect($obj === $entry->get())->toBe(true);
-    expect($registry->tag('tag')->has('class'))->toBe(true);
-    expect($registry->tag('tag')->has('wrong'))->toBe(false);
-    expect($registry->has('class'))->toBe(false);
-});
+        $registry = new Registry();
+        $registry->add('class', function () {
+            return new stdClass();
+        })->args('chuck');
+    }
 
-test('Add tagged key without value', function () {
-    $registry = new Registry();
-    $registry->tag('tag')->add(TestClassApp::class);
+    public function testIsReified(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', stdClass::class);
+        $obj1 = $registry->get('class');
+        $obj2 = $registry->get('class');
 
-    expect($registry->tag('tag')->entry(TestClassApp::class)->definition())->toBe(TestClassApp::class);
-});
+        $this->assertEquals($obj1 === $obj2, true);
+    }
 
-test('Parameter info class', function () {
-    $rc = new ReflectionClass(TestClassUnionTypeConstructor::class);
-    $c = $rc->getConstructor();
-    $p = $c->getParameters()[0];
-    $resolver = new Resolver(new Registry());
-    $s = 'Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor::__construct(' .
-        '..., Conia\Registry\Tests\Fixtures\TestClassApp|Conia\Registry\Tests\Fixtures\TestClassRequest $param, ...)';
+    public function testAsIs(): void
+    {
+        $registry = new Registry();
+        $registry->add('closure1', fn () => 'called');
+        $registry->add('closure2', fn () => 'notcalled')->asIs();
+        $value1 = $registry->get('closure1');
+        $value2 = $registry->get('closure2');
 
-    expect($resolver->getParamInfo($p))->toBe($s);
-});
+        $this->assertEquals('called', $value1);
+        $this->assertEquals(true, $value2 instanceof Closure);
+    }
 
-test('Parameter info function', function () {
-    $rf = new ReflectionFunction(function (TestClassApp $app) {
-        $app->debug();
-    });
-    $p = $rf->getParameters()[0];
-    $resolver = new Resolver(new Registry());
-    $s = 'P\Tests\RegistryTest::{closure}(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
+    public function testIsNotReified(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', stdClass::class)->reify(false);
+        $obj1 = $registry->get('class');
+        $obj2 = $registry->get('class');
 
-    expect($resolver->getParamInfo($p))->toBe($s);
-});
+        $this->assertEquals(false, $obj1 === $obj2);
+    }
 
-test('Getting non existent tagged entry fails', function () {
-    $registry = new Registry();
+    public function testFetchEntriesList(): void
+    {
+        $registry = new Registry();
+        $registry->add('class', stdClass::class)->reify(false);
 
-    $registry->tag('tag')->get('NonExistent');
-})->throws(NotFoundException::class, 'Unresolvable id: NonExistent');
+        $this->assertEquals(['class'], $registry->entries());
+        $this->assertEquals(
+            ['Psr\Container\ContainerInterface', 'Conia\Registry\Registry', 'class'],
+            $registry->entries(includeRegistry: true)
+        );
+    }
+
+    public function testAddAndReceiveTaggedEntries(): void
+    {
+        $registry = new Registry();
+        $registry->tag('tag')->add('class', stdClass::class);
+        $obj = $registry->tag('tag')->get('class');
+        $entry = $registry->tag('tag')->entry('class');
+
+        $this->assertEquals(true, $obj instanceof stdClass);
+        $this->assertEquals(stdClass::class, $entry->definition());
+        $this->assertEquals(true, $obj === $entry->instance());
+        $this->assertEquals(true, $obj === $entry->get());
+        $this->assertEquals(true, $registry->tag('tag')->has('class'));
+        $this->assertEquals(false, $registry->tag('tag')->has('wrong'));
+        $this->assertEquals(false, $registry->has('class'));
+    }
+
+    public function testAddTaggedKeyWithoutValue(): void
+    {
+        $registry = new Registry();
+        $registry->tag('tag')->add(TestClassApp::class);
+
+        $this->assertEquals(TestClassApp::class, $registry->tag('tag')->entry(TestClassApp::class)->definition());
+    }
+
+    public function testParameterInfoClass(): void
+    {
+        $rc = new ReflectionClass(TestClassUnionTypeConstructor::class);
+        $c = $rc->getConstructor();
+        $p = $c->getParameters()[0];
+        $resolver = new Resolver(new Registry());
+        $s = 'Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor::__construct(' .
+            '..., Conia\Registry\Tests\Fixtures\TestClassApp|Conia\Registry\Tests\Fixtures\TestClassRequest $param, ...)';
+
+        $this->assertEquals($s, $resolver->getParamInfo($p));
+    }
+
+    public function testParameterInfoFunction(): void
+    {
+        $rf = new ReflectionFunction(function (TestClassApp $app) {
+            $app->debug();
+        });
+        $p = $rf->getParameters()[0];
+        $resolver = new Resolver(new Registry());
+        $s = 'Conia\Registry\Tests\RegistryTest::Conia\Registry\Tests\{closure}(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
+
+        $this->assertEquals($s, $resolver->getParamInfo($p));
+    }
+
+    public function testGettingNonExistentTaggedEntryFails(): void
+    {
+        $this->throws(NotFoundException::class, 'Unresolvable id: NonExistent');
+
+        $registry = new Registry();
+
+        $registry->tag('tag')->get('NonExistent');
+    }
+}

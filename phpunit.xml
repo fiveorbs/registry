@@ -1,29 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
-         colors="true">
-    <testsuites>
-        <testsuite name="Conia Registry Test Suite">
-            <directory suffix="Test.php">tests</directory>
-        </testsuite>
-    </testsuites>
-    <filter>
-        <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">src</directory>
-            <exclude>
-                <file>src/Server/Server.php</file>
-                <file>src/Server/CliRouter.php</file>
-                <file>src/Server/functions.php</file>
-            </exclude>
-        </whitelist>
-    </filter>
-    <coverage processUncoveredFiles="true" pathCoverage="true">
-        <include>
-            <directory>src</directory>
-        </include>
-        <report>
-            <html outputDirectory="coverage" lowUpperBound="20" highLowerBound="50"/>
-        </report>
-    </coverage>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.3/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache">
+  <testsuites>
+    <testsuite name="Conia Registry Test Suite">
+      <directory suffix="Test.php">tests</directory>
+    </testsuite>
+  </testsuites>
+  <coverage>
+    <report>
+      <html outputDirectory="coverage" lowUpperBound="20" highLowerBound="50"/>
+    </report>
+  </coverage>
+  <source>
+    <include>
+      <directory>src</directory>
+    </include>
+  </source>
 </phpunit>

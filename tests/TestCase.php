@@ -27,4 +27,13 @@ class TestCase extends BaseTestCase
 
         return $registry;
     }
+
+    public function throws(string $exception, string $message = null): void
+    {
+        $this->expectException($exception);
+
+        if ($message) {
+            $this->expectExceptionMessage($message);
+        }
+    }
 }
