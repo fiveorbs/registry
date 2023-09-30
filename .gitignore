@@ -5,7 +5,6 @@
 .php_cs.cache
 .phpactor.json
 .phpunit.result.cache
-.null-ls*
 __pycache__
 composer.lock
 /data

@@ -4,7 +4,7 @@
          bootstrap="vendor/autoload.php"
          colors="true">
     <testsuites>
-        <testsuite name="Chuck Test Suite">
+        <testsuite name="Conia Registry Test Suite">
             <directory suffix="Test.php">tests</directory>
         </testsuite>
     </testsuites>

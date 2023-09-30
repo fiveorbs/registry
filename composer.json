@@ -19,7 +19,8 @@
     },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1",
-        "pestphp/pest": "^2",
+        "friendsofphp/php-cs-fixer": "^3",
+        "pestphp/pest": "^1",
         "vimeo/psalm": "^5.7"
     },
     "autoload": {
