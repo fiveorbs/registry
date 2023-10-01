@@ -8,8 +8,6 @@ use Conia\Registry\Entry;
 use Conia\Registry\Tests\TestCase;
 use stdClass;
 
-require __DIR__ . '/Fixtures/globalTestSymbols.php';
-
 /**
  * @internal
  *

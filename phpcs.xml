@@ -2,7 +2,10 @@
 <ruleset name="conia">
     <description>coding standard</description>
 
-    <rule ref="PSR12"/>
+    <rule ref="PSR12">
+        <!-- Allow empty constructors with curly brackets on the same line -->
+        <exclude name="Squiz.WhiteSpace.ScopeClosingBrace.ContentBefore"/>
+    </rule>
 
     <rule ref="Generic.Files.LineLength">
         <properties>

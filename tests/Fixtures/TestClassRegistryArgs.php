@@ -10,7 +10,8 @@ class TestClassRegistryArgs
         public readonly TestClass $tc,
         public readonly string $test,
         public readonly ?TestClassApp $app = null,
-    ) {}
+    ) {
+    }
 
     public static function fromDefaults(): static
     {

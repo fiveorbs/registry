@@ -18,7 +18,9 @@ use Throwable;
 
 class Resolver
 {
-    public function __construct(protected readonly Registry $registry) {}
+    public function __construct(protected readonly Registry $registry)
+    {
+    }
 
     /** @psalm-param class-string $class */
     public function autowire(

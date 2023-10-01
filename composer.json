@@ -31,7 +31,10 @@
     "autoload-dev": {
         "psr-4": {
             "Conia\\Registry\\Tests\\": "tests"
-        }
+        },
+        "files": [
+            "tests/Fixtures/globalTestSymbols.php"
+        ]
     },
     "config": {
         "allow-plugins": {

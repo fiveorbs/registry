@@ -6,8 +6,8 @@ namespace Conia\Registry\Tests\Fixtures;
 
 class TestClass implements TestInterface
 {
-    public function __construct(public string $value = '') {
-
+    public function __construct(public string $value = '')
+    {
     }
 
     public function __toString(): string

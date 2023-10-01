@@ -8,4 +8,3 @@ if (!function_exists('_global_test_function')) {
         return true;
     }
 }
-

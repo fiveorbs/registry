@@ -183,7 +183,10 @@ final class RegistryTest extends TestCase
             NotFoundException::class
         );
 
-        $this->assertEquals(true, $registry->get(Psr\Container\ContainerExceptionInterface::class) instanceof NotFoundException);
+        $this->assertEquals(
+            true,
+            $registry->get(Psr\Container\ContainerExceptionInterface::class) instanceof NotFoundException
+        );
     }
 
     public function testResolveClassWithConstructor(): void
@@ -463,7 +466,8 @@ final class RegistryTest extends TestCase
         $p = $c->getParameters()[0];
         $resolver = new Resolver(new Registry());
         $s = 'Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor::__construct(' .
-            '..., Conia\Registry\Tests\Fixtures\TestClassApp|Conia\Registry\Tests\Fixtures\TestClassRequest $param, ...)';
+            '..., Conia\Registry\Tests\Fixtures\TestClassApp|' .
+            'Conia\Registry\Tests\Fixtures\TestClassRequest $param, ...)';
 
         $this->assertEquals($s, $resolver->getParamInfo($p));
     }
@@ -475,7 +479,8 @@ final class RegistryTest extends TestCase
         });
         $p = $rf->getParameters()[0];
         $resolver = new Resolver(new Registry());
-        $s = 'Conia\Registry\Tests\RegistryTest::Conia\Registry\Tests\{closure}(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
+        $s = 'Conia\Registry\Tests\RegistryTest::Conia\Registry\Tests\{closure}' .
+            '(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
 
         $this->assertEquals($s, $resolver->getParamInfo($p));
     }
