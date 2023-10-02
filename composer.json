@@ -18,8 +18,8 @@
         "psr/container": "^2.0"
     },
     "require-dev": {
+        "conia/development": "^1.0.1",
         "dealerdirect/phpcodesniffer-composer-installer": "^1",
-        "friendsofphp/php-cs-fixer": "^3",
         "phpunit/phpunit": "^10",
         "vimeo/psalm": "^5.7"
     },
