@@ -169,6 +169,7 @@ class Resolver
 
             foreach ($parameters as $param) {
                 $name = $param->getName();
+
                 if (isset($predefinedArgs[$name])) {
                     /** @psalm-var list<mixed> */
                     $args[] = $predefinedArgs[$name];

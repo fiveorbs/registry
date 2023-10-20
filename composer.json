@@ -18,7 +18,7 @@
         "psr/container": "^2.0"
     },
     "require-dev": {
-        "conia/development": "^1.0.1",
+        "conia/development": "^1.0.2",
         "dealerdirect/phpcodesniffer-composer-installer": "^1",
         "phpunit/phpunit": "^10",
         "vimeo/psalm": "^5.7"
