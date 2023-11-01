@@ -22,15 +22,6 @@ use ReflectionClass;
 use ReflectionFunction;
 use stdClass;
 
-/**
- * @internal
- *
- * @covers \Conia\Registry\Call
- * @covers \Conia\Registry\Entry
- * @covers \Conia\Registry\Inject
- * @covers \Conia\Registry\Registry
- * @covers \Conia\Registry\Resolver
- */
 final class RegistryTest extends TestCase
 {
     public function testAddKeyWithoutValue(): void

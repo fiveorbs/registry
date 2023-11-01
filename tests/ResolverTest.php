@@ -20,15 +20,6 @@ use Conia\Registry\Tests\Fixtures\TestClassResolverDefault;
 use Conia\Registry\Tests\Fixtures\TestClassWithConstructor;
 use Conia\Registry\Tests\TestCase;
 
-/**
- * @internal
- *
- * @covers \Conia\Registry\Call
- * @covers \Conia\Registry\Entry
- * @covers \Conia\Registry\Inject
- * @covers \Conia\Registry\Registry
- * @covers \Conia\Registry\Resolver
- */
 final class ResolverTest extends TestCase
 {
     public function testSimpleAutowiring(): void

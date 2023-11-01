@@ -8,11 +8,6 @@ use Conia\Registry\Entry;
 use Conia\Registry\Tests\TestCase;
 use stdClass;
 
-/**
- * @internal
- *
- * @covers \Conia\Registry\Entry
- */
 final class EntryTest extends TestCase
 {
     public function testEntryMethods(): void
