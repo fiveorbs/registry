@@ -8,18 +8,12 @@ use Closure;
 use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Exception\NotFoundException;
 use Conia\Registry\Registry;
-use Conia\Registry\Resolver;
 use Conia\Registry\Tests\Fixtures\TestClass;
 use Conia\Registry\Tests\Fixtures\TestClassApp;
-use Conia\Registry\Tests\Fixtures\TestClassIntersectionTypeConstructor;
 use Conia\Registry\Tests\Fixtures\TestClassRegistryArgs;
 use Conia\Registry\Tests\Fixtures\TestClassRegistrySingleArg;
-use Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor;
-use Conia\Registry\Tests\Fixtures\TestClassUntypedConstructor;
 use Conia\Registry\Tests\Fixtures\TestClassWithConstructor;
 use Conia\Registry\Tests\TestCase;
-use ReflectionClass;
-use ReflectionFunction;
 use stdClass;
 
 final class RegistryTest extends TestCase
@@ -204,39 +198,11 @@ final class RegistryTest extends TestCase
         $this->assertEquals('chuck', $instance->test);
     }
 
-    public function testRejectClassWithUntypedConstructor(): void
-    {
-        $this->throws(ContainerException::class, 'typed constructor parameters');
-
-        $registry = new Registry();
-
-        $registry->get(TestClassUntypedConstructor::class);
-    }
-
-    public function testRejectClassWithUnsupportedConstructorUnionTypes(): void
-    {
-        $this->throws(ContainerException::class, 'union or intersection');
-
-        $registry = new Registry();
-
-        $registry->get(TestClassUnionTypeConstructor::class);
-    }
-
-    public function testRejectClassWithUnsupportedConstructorIntersectionTypes(): void
-    {
-        $this->throws(ContainerException::class, 'union or intersection');
-
-        $registry = new Registry();
-
-        $registry->get(TestClassIntersectionTypeConstructor::class);
-    }
-
     public function testRejectUnresolvableClass(): void
     {
         $this->throws(ContainerException::class, 'Unresolvable');
 
         $registry = new Registry();
-
         $registry->get(GdImage::class);
     }
 
@@ -245,7 +211,6 @@ final class RegistryTest extends TestCase
         $this->throws(NotFoundException::class, 'NonExistent');
 
         $registry = new Registry();
-
         $registry->get('NonExistent');
     }
 
@@ -255,17 +220,26 @@ final class RegistryTest extends TestCase
 
         $registry = new Registry();
         $registry->add('unresolvable', InvalidClass::class);
-
         $registry->get('unresolvable');
+    }
+
+    public function testGettingNonResolvableAutowiringFails(): void
+    {
+        $this->throws(
+            NotFoundException::class,
+            'Unresolvable id: Conia\Registry\Tests\Fixtures\TestClassRegistryArgs'
+        );
+
+        $registry = new Registry(autowire: true);
+        $registry->get(TestClassRegistryArgs::class);
     }
 
     public function testRejectingClassWithNonResolvableParams(): void
     {
-        $this->throws(ContainerException::class, 'Unresolvable id: string');
+        $this->throws(NotFoundException::class, 'Unresolvable:');
 
         $registry = new Registry();
         $registry->add('unresolvable', TestClassRegistryArgs::class);
-
         $registry->get('unresolvable');
     }
 
@@ -448,32 +422,6 @@ final class RegistryTest extends TestCase
         $registry->tag('tag')->add(TestClassApp::class);
 
         $this->assertEquals(TestClassApp::class, $registry->tag('tag')->entry(TestClassApp::class)->definition());
-    }
-
-    public function testParameterInfoClass(): void
-    {
-        $rc = new ReflectionClass(TestClassUnionTypeConstructor::class);
-        $c = $rc->getConstructor();
-        $p = $c->getParameters()[0];
-        $resolver = new Resolver(new Registry());
-        $s = 'Conia\Registry\Tests\Fixtures\TestClassUnionTypeConstructor::__construct(' .
-            '..., Conia\Registry\Tests\Fixtures\TestClassApp|' .
-            'Conia\Registry\Tests\Fixtures\TestClassRequest $param, ...)';
-
-        $this->assertEquals($s, $resolver->getParamInfo($p));
-    }
-
-    public function testParameterInfoFunction(): void
-    {
-        $rf = new ReflectionFunction(function (TestClassApp $app) {
-            $app->debug();
-        });
-        $p = $rf->getParameters()[0];
-        $resolver = new Resolver(new Registry());
-        $s = 'Conia\Registry\Tests\RegistryTest::Conia\Registry\Tests\{closure}' .
-            '(..., Conia\Registry\Tests\Fixtures\TestClassApp $app, ...)';
-
-        $this->assertEquals($s, $resolver->getParamInfo($p));
     }
 
     public function testGettingNonExistentTaggedEntryFails(): void

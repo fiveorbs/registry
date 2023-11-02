@@ -6,8 +6,10 @@ namespace Conia\Registry;
 
 use Closure;
 use Conia\Registry\Entry;
+use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Exception\NotFoundException;
-use Conia\Registry\Resolver;
+use Conia\Wire\Exception\WireException;
+use Conia\Wire\Resolver;
 use Psr\Container\ContainerInterface as PsrContainer;
 
 /**
@@ -63,19 +65,23 @@ class Registry implements PsrContainer
     {
         $entry = $this->entries[$id] ?? null;
 
-        if ($entry) {
-            return $this->resolveEntry($entry);
-        }
+        try {
+            if ($entry) {
+                return $this->resolveEntry($entry);
+            }
 
-        // We are in a tag. Unregistered entries should always
-        // be registered on the root.
-        if ($this->parent) {
-            return $this->parent->get($id);
-        }
+            // We are in a tag. See if the $id can be resolved by the parent
+            // be registered on the root.
+            if ($this->parent) {
+                return $this->parent->get($id);
+            }
 
-        // Autowiring: $id does not exists as an entry in the registry
-        if ($this->autowire && class_exists($id)) {
-            return $this->resolver->autowire($id);
+            // Autowiring: $id does not exists as an entry in the registry
+            if ($this->autowire && class_exists($id)) {
+                return $this->resolver->create($id);
+            }
+        } catch (WireException $e) {
+            throw new NotFoundException('Unresolvable id: ' . $id . ' - Details: ' . $e->getMessage());
         }
 
         throw new NotFoundException('Unresolvable id: ' . $id);
@@ -172,19 +178,19 @@ class Registry implements PsrContainer
 
                         return $this->callAndReify(
                             $entry,
-                            $this->resolver->autowire($value, $args)
+                            $this->resolver->create($value, $args)
                         );
                     }
 
                     return $this->callAndReify(
                         $entry,
-                        $this->resolver->autowire($value, $args, $constructor)
+                        $this->resolver->create($value, $args, $constructor)
                     );
                 }
 
                 return $this->callAndReify(
                     $entry,
-                    $this->resolver->autowire($value, [], $constructor)
+                    $this->resolver->create($value, [], $constructor)
                 );
             }
 

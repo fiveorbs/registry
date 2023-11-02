@@ -6,6 +6,7 @@ namespace Conia\Registry;
 
 use Closure;
 use Conia\Registry\Exception\ContainerException;
+use Conia\Wire\Call;
 
 /**
  * @psalm-api
