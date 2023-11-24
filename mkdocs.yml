@@ -1,7 +1,8 @@
 site_name: Conia Registry
 copyright: © 2023 ebene fünf GmbH
 nav:
-  - index.md
+  - Documentation:
+    - index.md
 theme:
     name: conia
 repo_url: https://github.com/coniadev/registry
@@ -11,3 +12,7 @@ plugins:
     - search
     - macros:
         module_name: docs/main
+markdown_extensions:
+    - admonition
+    - pymdownx.snippets:
+        base_path: [".", "docs/code"]
