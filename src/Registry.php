@@ -6,10 +6,10 @@ namespace Conia\Registry;
 
 use Closure;
 use Conia\Registry\Entry;
-use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Exception\NotFoundException;
 use Conia\Wire\Exception\WireException;
-use Conia\Wire\Resolver;
+use Conia\Wire\Creator;
+use Conia\Wire\CallableResolver;
 use Psr\Container\ContainerInterface as PsrContainer;
 
 /**
@@ -19,7 +19,7 @@ use Psr\Container\ContainerInterface as PsrContainer;
  */
 class Registry implements PsrContainer
 {
-    protected Resolver $resolver;
+    protected Creator $creator;
 
     /** @psalm-var EntryArray */
     protected array $entries = [];
@@ -34,7 +34,7 @@ class Registry implements PsrContainer
     ) {
         $this->add(PsrContainer::class, $this);
         $this->add(Registry::class, $this);
-        $this->resolver = new Resolver($this);
+        $this->creator = new Creator($this);
     }
 
     public function has(string $id): bool
@@ -78,7 +78,7 @@ class Registry implements PsrContainer
 
             // Autowiring: $id does not exists as an entry in the registry
             if ($this->autowire && class_exists($id)) {
-                return $this->resolver->create($id);
+                return $this->creator->create($id);
             }
         } catch (WireException $e) {
             throw new NotFoundException('Unresolvable id: ' . $id . ' - Details: ' . $e->getMessage());
@@ -145,7 +145,7 @@ class Registry implements PsrContainer
 
             /** @psalm-var callable */
             $callable = [$value, $methodToResolve];
-            $args = $this->resolver->resolveCallableArgs($callable, $call->args);
+            $args = (new CallableResolver($this->creator))->resolve($callable, $call->args);
             $callable(...$args);
         }
 
@@ -174,23 +174,23 @@ class Registry implements PsrContainer
                     // Don't autowire if $args are given
                     if ($args instanceof Closure) {
                         /** @psalm-var array<string, mixed> */
-                        $args = $args(...$this->resolver->resolveCallableArgs($args));
+                        $args = $args(...(new CallableResolver($this->creator))->resolve($args));
 
                         return $this->callAndReify(
                             $entry,
-                            $this->resolver->create($value, $args)
+                            $this->creator->create($value, $args)
                         );
                     }
 
                     return $this->callAndReify(
                         $entry,
-                        $this->resolver->create($value, $args, $constructor)
+                        $this->creator->create($value, $args, $constructor)
                     );
                 }
 
                 return $this->callAndReify(
                     $entry,
-                    $this->resolver->create($value, [], $constructor)
+                    $this->creator->create($value, [], $constructor)
                 );
             }
 
@@ -203,7 +203,7 @@ class Registry implements PsrContainer
             $args = $entry->getArgs();
 
             if (is_null($args)) {
-                $args = $this->resolver->resolveCallableArgs($value);
+                $args = (new CallableResolver($this->creator))->resolve($value);
             } elseif ($args instanceof Closure) {
                 /** @var array<string, mixed> */
                 $args = $args();
