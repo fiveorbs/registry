@@ -21,11 +21,5 @@ jobs:
       - name: Install packages with composer
         run: composer install
 
-      - name: Run tests
-        run: ./vendor/bin/phpunit --testdox --coverage-text
-
-      - name: Run Psalm
-        run: ./vendor/bin/psalm --output-format=github --shepherd
-
-      - name: Run PHP Code Sniffer
-        run: ./vendor/bin/phpcs -s -p src tests
+      - name: Run tests, static type checker and linter
+        run: composer github
