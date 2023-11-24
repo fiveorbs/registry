@@ -15,7 +15,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.2",
-        "conia/wire": "dev-main",
+        "conia/wire": "^0.1.0",
         "psr/container": "^2.0"
     },
     "require-dev": {
