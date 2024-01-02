@@ -23,7 +23,7 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->add(TestClassApp::class);
 
-        $this->assertEquals(TestClassApp::class, $registry->entry(TestClassApp::class)->definition());
+        $this->assertSame(TestClassApp::class, $registry->entry(TestClassApp::class)->definition());
     }
 
     public function testEntryInstanceAndValue(): void
@@ -31,16 +31,16 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->add(stdClass::class);
 
-        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->definition());
-        $this->assertEquals(null, $registry->entry(stdClass::class)->instance());
-        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->get());
+        $this->assertSame(stdClass::class, $registry->entry(stdClass::class)->definition());
+        $this->assertSame(null, $registry->entry(stdClass::class)->instance());
+        $this->assertSame(stdClass::class, $registry->entry(stdClass::class)->get());
 
         $obj = $registry->get(stdClass::class);
 
-        $this->assertEquals(true, $obj instanceof stdClass);
-        $this->assertEquals(stdClass::class, $registry->entry(stdClass::class)->definition());
-        $this->assertEquals($obj, $registry->entry(stdClass::class)->instance());
-        $this->assertEquals($obj, $registry->entry(stdClass::class)->get());
+        $this->assertSame(true, $obj instanceof stdClass);
+        $this->assertSame(stdClass::class, $registry->entry(stdClass::class)->definition());
+        $this->assertSame($obj, $registry->entry(stdClass::class)->instance());
+        $this->assertSame($obj, $registry->entry(stdClass::class)->get());
     }
 
     public function testCheckIfRegistered(): void
@@ -48,8 +48,8 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->add(Registry::class, $registry);
 
-        $this->assertEquals(true, $registry->has(Registry::class));
-        $this->assertEquals(false, $registry->has('registry'));
+        $this->assertSame(true, $registry->has(Registry::class));
+        $this->assertSame(false, $registry->has('registry'));
     }
 
     public function testInstantiate(): void
@@ -60,8 +60,8 @@ final class RegistryTest extends TestCase
         $reg = $registry->new('registry');
         $req = $registry->new('test');
 
-        $this->assertEquals(true, $reg instanceof Registry);
-        $this->assertEquals(true, $req instanceof TestClass);
+        $this->assertSame(true, $reg instanceof Registry);
+        $this->assertSame(true, $req instanceof TestClass);
     }
 
     public function testInstantiateWithCall(): void
@@ -70,8 +70,8 @@ final class RegistryTest extends TestCase
         $registry->add(TestClass::class)->call('init', value: 'testvalue');
         $tc = $registry->get(TestClass::class);
 
-        $this->assertEquals(true, $tc instanceof TestClass);
-        $this->assertEquals('testvalue', $tc->value);
+        $this->assertSame(true, $tc instanceof TestClass);
+        $this->assertSame('testvalue', $tc->value);
     }
 
     public function testChainedInstantiation(): void
@@ -91,9 +91,9 @@ final class RegistryTest extends TestCase
             13
         );
 
-        $this->assertEquals(true, $exception instanceof NotFoundException);
-        $this->assertEquals('The message', $exception->getMessage());
-        $this->assertEquals(13, $exception->getCode());
+        $this->assertSame(true, $exception instanceof NotFoundException);
+        $this->assertSame('The message', $exception->getMessage());
+        $this->assertSame(13, $exception->getCode());
     }
 
     public function testFactoryMethodInstantiation(): void
@@ -102,10 +102,10 @@ final class RegistryTest extends TestCase
         $registry->add(TestClassRegistryArgs::class)->constructor('fromDefaults');
         $instance = $registry->get(TestClassRegistryArgs::class);
 
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('fromDefaults', $instance->app->app());
-        $this->assertEquals('fromDefaults', $instance->test);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('fromDefaults', $instance->app->app());
+        $this->assertSame('fromDefaults', $instance->test);
     }
 
     public function testFactoryMethodInstantiationWithArgs(): void
@@ -117,17 +117,17 @@ final class RegistryTest extends TestCase
             ->args(test: 'passed', app: 'passed');
         $instance = $registry->get(TestClassRegistryArgs::class);
 
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('passed', $instance->app->app());
-        $this->assertEquals('passed', $instance->test);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('passed', $instance->app->app());
+        $this->assertSame('passed', $instance->test);
     }
 
     public function testAutowiredInstantiation(): void
     {
         $registry = new Registry();
 
-        $this->assertEquals(true, $registry->new(NotFoundException::class) instanceof NotFoundException);
+        $this->assertSame(true, $registry->new(NotFoundException::class) instanceof NotFoundException);
     }
 
     public function testAutowiredInstantiationFails(): void
@@ -136,7 +136,7 @@ final class RegistryTest extends TestCase
 
         $registry = new Registry();
 
-        $this->assertEquals(true, $registry->new(NoValidClass::class) instanceof NotFoundException);
+        $this->assertSame(true, $registry->new(NoValidClass::class) instanceof NotFoundException);
     }
 
     public function testResolveInstance(): void
@@ -145,7 +145,7 @@ final class RegistryTest extends TestCase
         $object = new stdClass();
         $registry->add('object', $object);
 
-        $this->assertEquals($object, $registry->get('object'));
+        $this->assertSame($object, $registry->get('object'));
     }
 
     public function testResolveSimpleClass(): void
@@ -153,7 +153,7 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->add('class', stdClass::class);
 
-        $this->assertEquals(true, $registry->get('class') instanceof stdClass);
+        $this->assertSame(true, $registry->get('class') instanceof stdClass);
     }
 
     public function testResolveChainedEntry(): void
@@ -168,7 +168,7 @@ final class RegistryTest extends TestCase
             NotFoundException::class
         );
 
-        $this->assertEquals(
+        $this->assertSame(
             true,
             $registry->get(Psr\Container\ContainerExceptionInterface::class) instanceof NotFoundException
         );
@@ -180,8 +180,8 @@ final class RegistryTest extends TestCase
 
         $object = $registry->get(TestClassWithConstructor::class);
 
-        $this->assertEquals($object::class, TestClassWithConstructor::class);
-        $this->assertEquals(TestClass::class, $object->tc::class);
+        $this->assertSame($object::class, TestClassWithConstructor::class);
+        $this->assertSame(TestClass::class, $object->tc::class);
     }
 
     public function testResolveClosureClass(): void
@@ -193,9 +193,9 @@ final class RegistryTest extends TestCase
         });
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testRejectUnresolvableClass(): void
@@ -252,9 +252,9 @@ final class RegistryTest extends TestCase
         ]);
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testResolveWithSingleNamedArgArray(): void
@@ -265,8 +265,8 @@ final class RegistryTest extends TestCase
         );
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance instanceof TestClassRegistrySingleArg);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance instanceof TestClassRegistrySingleArg);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testResolveWithNamedArgsArray(): void
@@ -278,9 +278,9 @@ final class RegistryTest extends TestCase
         );
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testResolveClosureClassWithArgs(): void
@@ -292,9 +292,9 @@ final class RegistryTest extends TestCase
         })->args(app: new TestClassApp('chuck'), tc: new TestClass(), name: 'chuck');
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testResolveWithArgsClosure(): void
@@ -310,10 +310,10 @@ final class RegistryTest extends TestCase
         });
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testResolveClosureClassWithArgsClosure(): void
@@ -330,10 +330,10 @@ final class RegistryTest extends TestCase
         });
         $instance = $registry->get('class');
 
-        $this->assertEquals(true, $instance instanceof TestClassRegistryArgs);
-        $this->assertEquals(true, $instance->tc instanceof TestClass);
-        $this->assertEquals(true, $instance->app instanceof TestClassApp);
-        $this->assertEquals('chuck', $instance->test);
+        $this->assertSame(true, $instance instanceof TestClassRegistryArgs);
+        $this->assertSame(true, $instance->tc instanceof TestClass);
+        $this->assertSame(true, $instance->app instanceof TestClassApp);
+        $this->assertSame('chuck', $instance->test);
     }
 
     public function testRejectMultipleUnnamedArgs(): void
@@ -363,7 +363,7 @@ final class RegistryTest extends TestCase
         $obj1 = $registry->get('class');
         $obj2 = $registry->get('class');
 
-        $this->assertEquals($obj1 === $obj2, true);
+        $this->assertSame($obj1 === $obj2, true);
     }
 
     public function testAsIs(): void
@@ -374,8 +374,8 @@ final class RegistryTest extends TestCase
         $value1 = $registry->get('closure1');
         $value2 = $registry->get('closure2');
 
-        $this->assertEquals('called', $value1);
-        $this->assertEquals(true, $value2 instanceof Closure);
+        $this->assertSame('called', $value1);
+        $this->assertSame(true, $value2 instanceof Closure);
     }
 
     public function testIsNotReified(): void
@@ -385,7 +385,7 @@ final class RegistryTest extends TestCase
         $obj1 = $registry->get('class');
         $obj2 = $registry->get('class');
 
-        $this->assertEquals(false, $obj1 === $obj2);
+        $this->assertSame(false, $obj1 === $obj2);
     }
 
     public function testFetchEntriesList(): void
@@ -393,8 +393,8 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->add('class', stdClass::class)->reify(false);
 
-        $this->assertEquals(['class'], $registry->entries());
-        $this->assertEquals(
+        $this->assertSame(['class'], $registry->entries());
+        $this->assertSame(
             ['Psr\Container\ContainerInterface', 'Conia\Registry\Registry', 'class'],
             $registry->entries(includeRegistry: true)
         );
@@ -407,13 +407,13 @@ final class RegistryTest extends TestCase
         $obj = $registry->tag('tag')->get('class');
         $entry = $registry->tag('tag')->entry('class');
 
-        $this->assertEquals(true, $obj instanceof stdClass);
-        $this->assertEquals(stdClass::class, $entry->definition());
-        $this->assertEquals(true, $obj === $entry->instance());
-        $this->assertEquals(true, $obj === $entry->get());
-        $this->assertEquals(true, $registry->tag('tag')->has('class'));
-        $this->assertEquals(false, $registry->tag('tag')->has('wrong'));
-        $this->assertEquals(false, $registry->has('class'));
+        $this->assertSame(true, $obj instanceof stdClass);
+        $this->assertSame(stdClass::class, $entry->definition());
+        $this->assertSame(true, $obj === $entry->instance());
+        $this->assertSame(true, $obj === $entry->get());
+        $this->assertSame(true, $registry->tag('tag')->has('class'));
+        $this->assertSame(false, $registry->tag('tag')->has('wrong'));
+        $this->assertSame(false, $registry->has('class'));
     }
 
     public function testAddTaggedKeyWithoutValue(): void
@@ -421,7 +421,7 @@ final class RegistryTest extends TestCase
         $registry = new Registry();
         $registry->tag('tag')->add(TestClassApp::class);
 
-        $this->assertEquals(TestClassApp::class, $registry->tag('tag')->entry(TestClassApp::class)->definition());
+        $this->assertSame(TestClassApp::class, $registry->tag('tag')->entry(TestClassApp::class)->definition());
     }
 
     public function testGettingNonExistentTaggedEntryFails(): void
