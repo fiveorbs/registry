@@ -7,9 +7,9 @@ namespace Conia\Registry;
 use Closure;
 use Conia\Registry\Entry;
 use Conia\Registry\Exception\NotFoundException;
-use Conia\Wire\Exception\WireException;
-use Conia\Wire\Creator;
 use Conia\Wire\CallableResolver;
+use Conia\Wire\Creator;
+use Conia\Wire\Exception\WireException;
 use Psr\Container\ContainerInterface as PsrContainer;
 
 /**
@@ -184,13 +184,17 @@ class Registry implements PsrContainer
 
                     return $this->callAndReify(
                         $entry,
-                        $this->creator->create($value, $args, $constructor)
+                        $this->creator->create(
+                            $value,
+                            predefinedArgs: $args,
+                            constructor: $constructor
+                        )
                     );
                 }
 
                 return $this->callAndReify(
                     $entry,
-                    $this->creator->create($value, [], $constructor)
+                    $this->creator->create($value, constructor: $constructor)
                 );
             }
 

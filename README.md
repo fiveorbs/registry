@@ -13,4 +13,4 @@ A PSR-11 compatible dependency injection container.
 
 Conia Registry is released under the MIT [license](LICENSE.md).
 
-Copyright © 2023 ebene fünf GmbH. All rights reserved.
+Copyright © 2023-2024 ebene fünf GmbH. All rights reserved.
