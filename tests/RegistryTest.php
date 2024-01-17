@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Conia\Registry\Tests;
 
 use Closure;
+use Conia\Registry\Entry;
 use Conia\Registry\Exception\ContainerException;
 use Conia\Registry\Exception\NotFoundException;
 use Conia\Registry\Registry;
@@ -21,9 +22,17 @@ final class RegistryTest extends TestCase
     public function testAddKeyWithoutValue(): void
     {
         $registry = new Registry();
-        $registry->add(TestClassApp::class);
+        $registry->add('value');
 
-        $this->assertSame(TestClassApp::class, $registry->entry(TestClassApp::class)->definition());
+        $this->assertSame('value', $registry->entry('value')->definition());
+    }
+
+    public function testAddEntryInstance(): void
+    {
+        $registry = new Registry();
+        $registry->addEntry(new Entry('key', 'value'));
+
+        $this->assertSame('value', $registry->entry('key')->definition());
     }
 
     public function testEntryInstanceAndValue(): void

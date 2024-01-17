@@ -30,7 +30,7 @@ class Entry
      * @psalm-param non-empty-string $id
      * */
     public function __construct(
-        readonly protected string $id,
+        readonly public string $id,
         protected mixed $definition
     ) {
         $this->reify = $this->negotiateReify($definition);

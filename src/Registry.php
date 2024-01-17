@@ -100,6 +100,14 @@ class Registry implements PsrContainer
         return $entry;
     }
 
+    public function addEntry(
+        Entry $entry,
+    ): Entry {
+        $this->entries[$entry->id] = $entry;
+
+        return $entry;
+    }
+
     /** @psalm-param non-empty-string $tag */
     public function tag(string $tag): Registry
     {
