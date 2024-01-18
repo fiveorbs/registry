@@ -413,16 +413,28 @@ final class RegistryTest extends TestCase
     {
         $registry = new Registry();
         $registry->tag('tag')->add('class', stdClass::class);
+        $registry->tag('tag')->add('registry', Registry::class);
         $obj = $registry->tag('tag')->get('class');
         $entry = $registry->tag('tag')->entry('class');
+        $entryReg = $registry->tag('tag')->entry('registry');
 
+        $this->assertSame(['class', 'registry'], $registry->tag('tag')->entries());
+        $this->assertSame([
+            'Psr\Container\ContainerInterface',
+            'Conia\Registry\Registry',
+            'class',
+            'registry',
+        ], $registry->tag('tag')->entries(true));
         $this->assertSame(true, $obj instanceof stdClass);
         $this->assertSame(stdClass::class, $entry->definition());
+        $this->assertSame(Registry::class, $entryReg->definition());
         $this->assertSame(true, $obj === $entry->instance());
         $this->assertSame(true, $obj === $entry->get());
         $this->assertSame(true, $registry->tag('tag')->has('class'));
+        $this->assertSame(true, $registry->tag('tag')->has('registry'));
         $this->assertSame(false, $registry->tag('tag')->has('wrong'));
         $this->assertSame(false, $registry->has('class'));
+        $this->assertSame(false, $registry->has('registry'));
     }
 
     public function testAddTaggedKeyWithoutValue(): void
