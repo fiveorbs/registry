@@ -39,7 +39,7 @@ class Registry implements PsrContainer
 
     public function has(string $id): bool
     {
-        return isset($this->entries[$id]);
+        return isset($this->entries[$id]) || ($this->parent && $this->parent->has($id));
     }
 
     /** @psalm-return list<string> */
@@ -206,7 +206,7 @@ class Registry implements PsrContainer
                 );
             }
 
-            if (isset($this->entries[$value])) {
+            if ($this->has($value)) {
                 return $this->get($value);
             }
         }

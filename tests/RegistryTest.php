@@ -55,10 +55,20 @@ final class RegistryTest extends TestCase
     public function testCheckIfRegistered(): void
     {
         $registry = new Registry();
-        $registry->add(Registry::class, $registry);
+        $registry->add('registry', $registry);
 
-        $this->assertSame(true, $registry->has(Registry::class));
-        $this->assertSame(false, $registry->has('registry'));
+        $this->assertSame(true, $registry->has('registry'));
+        $this->assertSame(false, $registry->has('wrong'));
+    }
+
+    public function testCheckIfRegisteredOnParentFromTag(): void
+    {
+        $registry = new Registry();
+        $registry->add('registry', $registry);
+        $tag = $registry->tag('test');
+
+        $this->assertSame(true, $tag->has('registry'));
+        $this->assertSame(false, $tag->has('wrong'));
     }
 
     public function testInstantiate(): void
