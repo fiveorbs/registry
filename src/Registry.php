@@ -10,16 +10,17 @@ use Conia\Registry\Exception\NotFoundException;
 use Conia\Wire\CallableResolver;
 use Conia\Wire\Creator;
 use Conia\Wire\Exception\WireException;
-use Psr\Container\ContainerInterface as PsrContainer;
+use Psr\Container\ContainerInterface as Container;
 
 /**
  * @psalm-api
  *
  * @psalm-type EntryArray = array<never, never>|array<string, Entry>
  */
-class Registry implements PsrContainer
+class Registry implements Container
 {
     protected Creator $creator;
+    protected readonly ?Container $wrappedContainer;
 
     /** @psalm-var EntryArray */
     protected array $entries = [];
@@ -29,17 +30,25 @@ class Registry implements PsrContainer
 
     public function __construct(
         public readonly bool $autowire = true,
+        ?Container $container = null,
         protected readonly string $tag = '',
         protected readonly ?Registry $parent = null,
     ) {
-        $this->add(PsrContainer::class, $this);
+        if ($container) {
+            $this->wrappedContainer = $container;
+            $this->add(Container::class, $container);
+            $this->add($container::class, $container);
+        } else {
+            $this->wrappedContainer = null;
+            $this->add(Container::class, $this);
+        }
         $this->add(Registry::class, $this);
         $this->creator = new Creator($this);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->entries[$id]) || ($this->parent && $this->parent->has($id));
+        return isset($this->entries[$id]) || $this->parent?->has($id) || $this->wrappedContainer?->has($id);
     }
 
     /** @psalm-return list<string> */
@@ -52,7 +61,7 @@ class Registry implements PsrContainer
         }
 
         return array_values(array_filter($keys, function ($item) {
-            return $item !== PsrContainer::class && !is_subclass_of($item, PsrContainer::class);
+            return $item !== Container::class && !is_subclass_of($item, Container::class);
         }));
     }
 
@@ -68,6 +77,10 @@ class Registry implements PsrContainer
         try {
             if ($entry) {
                 return $this->resolveEntry($entry);
+            }
+
+            if ($this->wrappedContainer?->has($id)) {
+                return $this->wrappedContainer->get($id);
             }
 
             // We are in a tag. See if the $id can be resolved by the parent

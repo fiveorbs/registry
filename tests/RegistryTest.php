@@ -14,7 +14,9 @@ use Conia\Registry\Tests\Fixtures\TestClassApp;
 use Conia\Registry\Tests\Fixtures\TestClassRegistryArgs;
 use Conia\Registry\Tests\Fixtures\TestClassRegistrySingleArg;
 use Conia\Registry\Tests\Fixtures\TestClassWithConstructor;
+use Conia\Registry\Tests\Fixtures\TestContainer;
 use Conia\Registry\Tests\TestCase;
+use Psr\Container\ContainerInterface;
 use stdClass;
 
 final class RegistryTest extends TestCase
@@ -453,6 +455,20 @@ final class RegistryTest extends TestCase
         $registry->tag('tag')->add(TestClassApp::class);
 
         $this->assertSame(TestClassApp::class, $registry->tag('tag')->entry(TestClassApp::class)->definition());
+    }
+
+    public function testThirdPartyContainer(): void
+    {
+        $container = new TestContainer();
+        $container->add('external', new stdClass());
+        $registry = new Registry(container: $container);
+        $registry->add('internal', new Registry());
+
+        $this->assertSame(true, $registry->get('external') instanceof stdClass);
+        $this->assertSame(true, $registry->get('internal') instanceof Registry);
+        $this->assertSame(true, $registry->get(ContainerInterface::class) instanceof TestContainer);
+        $this->assertSame($container, $registry->get(ContainerInterface::class));
+        $this->assertSame($container, $registry->get(TestContainer::class));
     }
 
     public function testGettingNonExistentTaggedEntryFails(): void
