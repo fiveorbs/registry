@@ -1,78 +1,78 @@
 {
-    "name": "conia/registry",
-    "description": "A PSR-11 compatible dependency injection container",
-    "keywords": [
-        "di",
-        "dependency injection",
-        "container",
-        "ioc",
-        "psr-11",
-        "psr11"
-    ],
-    "type": "library",
-    "license": "MIT",
-    "minimum-stability": "dev",
-    "prefer-stable": true,
-    "require": {
-        "php": ">=8.2",
-        "conia/wire": "^0.3.0",
-        "psr/container": "^2.0"
-    },
-    "require-dev": {
-        "conia/development": "^1.1.1",
-        "dealerdirect/phpcodesniffer-composer-installer": "^1",
-        "ernst/coverlyzer": "^0.1.1",
-        "phpunit/phpunit": "^10",
-        "vimeo/psalm": "^5.7"
-    },
-    "autoload": {
-        "psr-4": {
-            "Conia\\Registry\\": "src"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Conia\\Registry\\Tests\\": "tests"
-        },
-        "files": [
-            "tests/Fixtures/globalTestSymbols.php"
-        ]
-    },
-    "scripts": {
-        "test": [
-            "composer docstest",
-            "./vendor/bin/phpunit --testdox --no-coverage --colors=always"
-        ],
-        "check": "./vendor/bin/psalm --no-cache",
-        "check-github": "./vendor/bin/psalm --output-format=github --shepherd",
-        "lint": "./vendor/bin/phpcs -s -p src tests",
-        "coverage": [
-            "./vendor/bin/phpunit --testdox --coverage-text --coverage-php=coverage/cover.php --colors=always",
-            "./vendor/bin/coverlyzer coverage/cover.php"
-        ],
-        "ci": [
-            "composer docstest",
-            "composer coverage",
-            "composer check",
-            "composer lint"
-        ],
-        "github": [
-            "composer docstest",
-            "composer coverage",
-            "composer check-github",
-            "composer lint"
-        ],
-        "docs": [
-            "composer docstest",
-            "./venv/bin/python ./venv/bin/mkdocs build"
-        ],
-        "docserve": "./venv/bin/python ./venv/bin/mkdocs serve",
-        "docstest": "./vendor/bin/docs-test-runner ./docs/code"
-    },
-    "config": {
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "pestphp/pest-plugin": true
-        }
-    }
+	"name": "fiveorbs/registry",
+	"description": "A PSR-11 compatible dependency injection container",
+	"keywords": [
+		"di",
+		"dependency injection",
+		"container",
+		"ioc",
+		"psr-11",
+		"psr11"
+	],
+	"type": "library",
+	"license": "MIT",
+	"minimum-stability": "dev",
+	"prefer-stable": true,
+	"require": {
+		"php": ">=8.2",
+		"fiveorbs/wire": "dev-main",
+		"psr/container": "^2.0"
+	},
+	"require-dev": {
+		"fiveorbs/dev": "^1.1",
+		"dealerdirect/phpcodesniffer-composer-installer": "^1",
+		"ernst/coverlyzer": "^0.1.1",
+		"phpunit/phpunit": "^10",
+		"vimeo/psalm": "^5.7"
+	},
+	"autoload": {
+		"psr-4": {
+			"FiveOrbs\\Registry\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"FiveOrbs\\Registry\\Tests\\": "tests"
+		},
+		"files": [
+			"tests/Fixtures/globalTestSymbols.php"
+		]
+	},
+	"scripts": {
+		"test": [
+			"composer docstest",
+			"./vendor/bin/phpunit --testdox --no-coverage --colors=always"
+		],
+		"check": "./vendor/bin/psalm --no-cache",
+		"check-github": "./vendor/bin/psalm --output-format=github --shepherd",
+		"lint": "./vendor/bin/phpcs -s -p src tests",
+		"coverage": [
+			"./vendor/bin/phpunit --testdox --coverage-text --coverage-php=coverage/cover.php --colors=always",
+			"./vendor/bin/coverlyzer coverage/cover.php"
+		],
+		"ci": [
+			"composer docstest",
+			"composer coverage",
+			"composer check",
+			"composer lint"
+		],
+		"github": [
+			"composer docstest",
+			"composer coverage",
+			"composer check-github",
+			"composer lint"
+		],
+		"docs": [
+			"composer docstest",
+			"./venv/bin/python ./venv/bin/mkdocs build"
+		],
+		"docserve": "./venv/bin/python ./venv/bin/mkdocs serve",
+		"docstest": "./vendor/bin/docs-test-runner ./docs/code"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true,
+			"pestphp/pest-plugin": true
+		}
+	}
 }

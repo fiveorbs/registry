@@ -1,11 +1,11 @@
-site_name: Conia Registry
+site_name: FiveOrbs Registry
 copyright: © 2023-2024 ebene fünf GmbH
 nav:
   - Documentation:
     - index.md
 theme:
-    name: conia
-repo_url: https://github.com/coniadev/registry
+    name: fiveorbs
+repo_url: https://github.com/fiveorbs/registry
 extra:
     project: Registry
 plugins:
