@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Conia\Registry\Tests\Fixtures;
+namespace FiveOrbs\Registry\Tests\Fixtures;
 
 class TestClassWithConstructor
 {
-    public function __construct(public readonly TestClass $tc)
-    {
-    }
+	public function __construct(public readonly TestClass $tc) {}
 }

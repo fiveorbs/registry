@@ -2,10 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Conia\Registry\Exception;
+namespace FiveOrbs\Registry\Exception;
 
 use Psr\Container\NotFoundExceptionInterface;
 
-class NotFoundException extends ContainerException implements NotFoundExceptionInterface
-{
-}
+class NotFoundException extends ContainerException implements NotFoundExceptionInterface {}

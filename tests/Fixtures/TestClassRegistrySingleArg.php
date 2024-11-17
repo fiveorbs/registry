@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Conia\Registry\Tests\Fixtures;
+namespace FiveOrbs\Registry\Tests\Fixtures;
 
 class TestClassRegistrySingleArg
 {
-    public function __construct(
-        public readonly string $test,
-    ) {
-    }
+	public function __construct(
+		public readonly string $test,
+	) {}
 }
