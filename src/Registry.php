@@ -208,14 +208,14 @@ class Registry implements Container
 						$this->creator->create(
 							$value,
 							predefinedArgs: $args,
-							constructor: $constructor,
+							constructor: $constructor ?? '',
 						),
 					);
 				}
 
 				return $this->callAndReify(
 					$entry,
-					$this->creator->create($value, constructor: $constructor),
+					$this->creator->create($value, constructor: $constructor ?? ''),
 				);
 			}
 
