@@ -10,6 +10,7 @@ use FiveOrbs\Registry\Exception\NotFoundException;
 use FiveOrbs\Wire\CallableResolver;
 use FiveOrbs\Wire\Creator;
 use FiveOrbs\Wire\Exception\WireException;
+use FiveOrbs\Wire\WireContainer;
 use Psr\Container\ContainerInterface as Container;
 
 /**
@@ -17,7 +18,7 @@ use Psr\Container\ContainerInterface as Container;
  *
  * @psalm-type EntryArray = array<never, never>|array<string, Entry>
  */
-class Registry implements Container
+class Registry implements WireContainer
 {
 	protected Creator $creator;
 	protected readonly ?Container $wrappedContainer;
@@ -98,6 +99,17 @@ class Registry implements Container
 		}
 
 		throw new NotFoundException('Unresolvable id: ' . $id);
+	}
+
+	public function definition(string $id): mixed
+	{
+		$entry = $this->entries[$id] ?? null;
+
+		if ($entry !== null) {
+			return $entry->definition();
+		}
+
+		throw new NotFoundException('Unresolvable definition - id: ' . $id);
 	}
 
 	/**

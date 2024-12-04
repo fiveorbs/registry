@@ -219,6 +219,22 @@ final class RegistryTest extends TestCase
 		$this->assertSame('chuck', $instance->test);
 	}
 
+	public function testDefinition(): void
+	{
+		$registry = new Registry();
+		$registry->add('registry', Registry::class);
+
+		$this->assertSame(Registry::class, $registry->definition('registry'));
+	}
+
+	public function testFailingDefinition(): void
+	{
+		$this->throws(NotFoundException::class, 'Unresolvable');
+
+		$registry = new Registry();
+		$registry->definition('registry');
+	}
+
 	public function testRejectUnresolvableClass(): void
 	{
 		$this->throws(ContainerException::class, 'Unresolvable');
